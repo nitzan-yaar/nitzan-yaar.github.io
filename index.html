@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartInvest AI - עוזר השקעות</title>
+    <title>SmartInvest AI - עוזר השקעות חכם</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,7 +16,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Chart.js (More stable for standalone HTML) -->
+    <!-- Chart.js (לגרף המדד) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -45,6 +45,17 @@
             border-color: #10b981 !important;
             outline: none;
         }
+        .custom-btn {
+            background-color: #10b981;
+            color: #000;
+            font-weight: 900;
+            transition: all 0.3s ease;
+        }
+        .custom-btn:hover {
+            background-color: #34d399;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -53,6 +64,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // מאגר מניות מובנה
         const STOCKS_DB = [
             { ticker: 'NVDA', name: 'NVIDIA', price: 875, volatility: 9, return: 45, sector: 'טכנולוגיה' },
             { ticker: 'AAPL', name: 'Apple', price: 172, volatility: 4, return: 15, sector: 'טכנולוגיה' },
@@ -61,11 +73,13 @@
             { ticker: 'AMZN', name: 'Amazon', price: 178, volatility: 6, return: 20, sector: 'קמעונאות' },
             { ticker: 'GOOGL', name: 'Google', price: 151, volatility: 5, return: 22, sector: 'טכנולוגיה' },
             { ticker: 'BRK.B', name: 'Berkshire', price: 408, volatility: 2, return: 12, sector: 'פיננסים' },
-            { ticker: 'LLY', name: 'Eli Lilly', price: 750, volatility: 5, return: 40, sector: 'בריאות' }
+            { ticker: 'LLY', name: 'Eli Lilly', price: 750, volatility: 5, return: 40, sector: 'בריאות' },
+            { ticker: 'V', name: 'Visa', price: 280, volatility: 3, return: 14, sector: 'פיננסים' },
+            { ticker: 'AMD', name: 'AMD', price: 190, volatility: 8, return: 30, sector: 'טכנולוגיה' }
         ];
 
         function App() {
-            const [minPrice, setMinPrice] = useState(0);
+            const [minPrice, setMinPrice] = useState(10);
             const [maxPrice, setMaxPrice] = useState(1000);
             const [risk, setRisk] = useState('Medium');
             const [horizon, setHorizon] = useState('Medium');
@@ -78,9 +92,11 @@
                 const filtered = STOCKS_DB.filter(s => s.price >= minPrice && s.price <= maxPrice);
                 
                 const scored = filtered.map(s => {
+                    // התאמת סיכון
                     const targetRisk = risk === 'Low' ? 3 : risk === 'Medium' ? 6 : 9;
                     const riskMatch = 100 - (Math.abs(s.volatility - targetRisk) * 10);
                     
+                    // התאמת אופק השקעה
                     let horizonBonus = 0;
                     if (horizon === 'Long' && s.volatility < 5) horizonBonus = 15;
                     if (horizon === 'Short' && s.return > 30) horizonBonus = 15;
@@ -96,14 +112,14 @@
 
             const generateAIInsight = (data) => {
                 if (data.length === 0) {
-                    setAiInsight("לא נמצאו מניות תואמות לפרמטרים שבחרת.");
+                    setAiInsight("לא נמצאו מניות תואמות לפרמטרים שבחרת. נסה להרחיב את טווח המחירים.");
                     return;
                 }
                 const top = data[0];
-                const horizonText = horizon === 'Short' ? 'טווח קצר' : horizon === 'Medium' ? 'טווח בינוני' : 'טווח ארוך';
+                const horizonText = horizon === 'Short' ? 'טווח קצר (עד שנה)' : horizon === 'Medium' ? 'טווח בינוני (1-5 שנים)' : 'טווח ארוך (5+ שנים)';
                 const riskText = risk === 'Low' ? 'סולידית' : risk === 'Medium' ? 'מאוזנת' : 'אגרסיבית';
                 
-                setAiInsight(`ניתוח חכם: עבור אסטרטגיה ${riskText} ל${horizonText}, המניה המומלצת ביותר היא ${top.ticker}. היא מציגה שילוב אופטימלי של תשואה (${top.return}%) ורמת תנודתיות שמתאימה לפרופיל שלך.`);
+                setAiInsight(`ניתוח חכם: עבור אסטרטגיה ${riskText} ל${horizonText}, המניה המומלצת ביותר היא ${top.ticker}. היא מציגה שילוב אופטימלי של תשואה (${top.return}%) ורמת תנודתיות שמתאימה בדיוק לפרופיל שהגדרת.`);
             };
 
             const updateChart = (data) => {
@@ -116,7 +132,7 @@
                     data: {
                         datasets: [{
                             label: 'מניות מומלצות',
-                            data: data.map(s => ({ x: s.volatility, y: s.return, r: s.score / 5 })),
+                            data: data.map(s => ({ x: s.volatility, y: s.return, r: s.score / 4 })),
                             backgroundColor: 'rgba(16, 185, 129, 0.5)',
                             borderColor: '#10b981',
                             borderWidth: 2
@@ -126,10 +142,20 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            x: { title: { display: true, text: 'רמת סיכון', color: '#666' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                            y: { title: { display: true, text: 'תשואה %', color: '#666' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                            x: { title: { display: true, text: 'רמת סיכון (1-10)', color: '#666' }, grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, max: 11 },
+                            y: { title: { display: true, text: 'תשואה שנתית %', color: '#666' }, grid: { color: 'rgba(255,255,255,0.05)' } }
                         },
-                        plugins: { legend: { display: false } }
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => {
+                                        const stock = data[context.dataIndex];
+                                        return `${stock.ticker}: ציון ${stock.score}`;
+                                    }
+                                }
+                            }
+                        }
                     }
                 });
             };
@@ -144,24 +170,24 @@
                     {/* Header */}
                     <header className="flex items-center gap-4 mb-12">
                         <div className="bg-emerald-500 p-3 rounded-2xl emerald-glow">
-                            <i data-lucide="bar-chart-3" className="text-black w-8 h-8"></i>
+                            <i data-lucide="trending-up" className="text-black w-8 h-8"></i>
                         </div>
                         <div>
                             <h1 className="text-3xl font-black tracking-tight">SmartInvest <span className="text-emerald-500">AI</span></h1>
-                            <p className="text-[10px] opacity-30 uppercase tracking-widest">Investment Intelligence Engine</p>
+                            <p className="text-[10px] opacity-30 uppercase tracking-widest">Financial Intelligence Dashboard</p>
                         </div>
                     </header>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                        {/* Sidebar */}
+                        {/* Sidebar - Controls */}
                         <aside className="lg:col-span-4 space-y-6">
                             <div className="glass p-8 rounded-[2rem] space-y-8">
                                 <h2 className="text-xl font-bold flex items-center gap-2">
-                                    <i data-lucide="sliders-horizontal" className="text-emerald-500 w-5 h-5"></i> הגדרות
+                                    <i data-lucide="settings" className="text-emerald-500 w-5 h-5"></i> הגדרות חיפוש
                                 </h2>
 
                                 <div className="space-y-4">
-                                    <label className="text-[10px] uppercase opacity-40 font-bold tracking-widest">טווח מחיר ($)</label>
+                                    <label className="text-[10px] uppercase opacity-40 font-bold tracking-widest block">טווח מחיר מניה ($)</label>
                                     <div className="flex gap-3">
                                         <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)} className="w-full p-3 rounded-xl text-sm" placeholder="מינימום" />
                                         <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className="w-full p-3 rounded-xl text-sm" placeholder="מקסימום" />
@@ -169,8 +195,8 @@
                                 </div>
 
                                 <div className="space-y-4">
-                                    <label className="text-[10px] uppercase opacity-40 font-bold tracking-widest">רמת סיכון</label>
-                                    <select value={risk} onChange={e => setRisk(e.target.value)} className="w-full p-3 rounded-xl text-sm appearance-none">
+                                    <label className="text-[10px] uppercase opacity-40 font-bold tracking-widest block">רמת סיכון מבוקשת</label>
+                                    <select value={risk} onChange={e => setRisk(e.target.value)} className="w-full p-3 rounded-xl text-sm appearance-none cursor-pointer">
                                         <option value="Low">נמוך (סולידי)</option>
                                         <option value="Medium">בינוני (מאוזן)</option>
                                         <option value="High">גבוה (אגרסיבי)</option>
@@ -178,61 +204,69 @@
                                 </div>
 
                                 <div className="space-y-4">
-                                    <label className="text-[10px] uppercase opacity-40 font-bold tracking-widest">אופק השקעה</label>
-                                    <select value={horizon} onChange={e => setHorizon(e.target.value)} className="w-full p-3 rounded-xl text-sm appearance-none">
-                                        <option value="Short">טווח קצר</option>
-                                        <option value="Medium">טווח בינוני</option>
-                                        <option value="Long">טווח ארוך</option>
+                                    <label className="text-[10px] uppercase opacity-40 font-bold tracking-widest block">אופק השקעה</label>
+                                    <select value={horizon} onChange={e => setHorizon(e.target.value)} className="w-full p-3 rounded-xl text-sm appearance-none cursor-pointer">
+                                        <option value="Short">טווח קצר (עד שנה)</option>
+                                        <option value="Medium">טווח בינוני (1-5 שנים)</option>
+                                        <option value="Long">טווח ארוך (5+ שנים)</option>
                                     </select>
                                 </div>
 
-                                <button onClick={analyze} className="w-full bg-emerald-500 text-black font-black py-4 rounded-2xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-2">
-                                    <i data-lucide="zap" className="w-4 h-4"></i> עדכן ניתוח
+                                <button onClick={analyze} className="custom-btn w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-lg">
+                                    <i data-lucide="refresh-cw" className="w-5 h-5"></i> עדכן ניתוח
                                 </button>
                             </div>
                         </aside>
 
-                        {/* Main Content */}
+                        {/* Main Content - Results */}
                         <div className="lg:col-span-8 space-y-6">
-                            {/* AI Insight */}
-                            <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl">
-                                <div className="flex items-center gap-2 mb-2 text-emerald-500 font-bold text-xs uppercase tracking-widest">
-                                    <i data-lucide="brain" className="w-4 h-4"></i> תובנת AI
+                            {/* AI Insight Section */}
+                            <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-5">
+                                    <i data-lucide="brain" className="w-20 h-20"></i>
                                 </div>
-                                <p className="text-sm leading-relaxed opacity-80">{aiInsight}</p>
+                                <div className="flex items-center gap-2 mb-2 text-emerald-500 font-bold text-xs uppercase tracking-widest">
+                                    <i data-lucide="sparkles" className="w-4 h-4"></i> תובנת AI אוטונומית
+                                </div>
+                                <p className="text-sm leading-relaxed opacity-90 italic">"{aiInsight}"</p>
                             </div>
 
                             {/* Chart (The Index) */}
-                            <div className="glass p-6 rounded-[2rem] h-[300px]">
+                            <div className="glass p-6 rounded-[2rem] h-[320px]">
+                                <h3 className="text-[10px] uppercase opacity-30 font-bold mb-4 tracking-widest">מדד סיכון מול תשואה</h3>
                                 <canvas ref={chartRef}></canvas>
                             </div>
 
                             {/* Results List */}
                             <div className="space-y-3">
                                 {results.map(stock => (
-                                    <div key={stock.ticker} className="glass p-5 rounded-2xl flex justify-between items-center hover:bg-white/5 transition-all">
+                                    <div key={stock.ticker} className="glass p-5 rounded-2xl flex justify-between items-center hover:bg-white/5 transition-all group">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 font-black">
+                                            <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 font-black group-hover:scale-110 transition-transform">
                                                 {stock.ticker[0]}
                                             </div>
                                             <div>
-                                                <div className="font-black text-lg">{stock.ticker}</div>
-                                                <div className="text-[10px] opacity-30 uppercase">{stock.sector}</div>
+                                                <div className="font-black text-xl">{stock.ticker}</div>
+                                                <div className="text-[10px] opacity-30 uppercase font-bold">{stock.sector}</div>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <div className="font-bold">${stock.price}</div>
-                                            <div className="text-[10px] text-emerald-500 font-bold">+{stock.return}% תשואה</div>
+                                        <div className="text-right hidden md:block">
+                                            <div className="font-bold text-lg">${stock.price}</div>
+                                            <div className="text-[10px] text-emerald-500 font-bold">+{stock.return}% תשואה שנתית</div>
                                         </div>
-                                        <div className="flex flex-col items-center">
-                                            <div className="text-[8px] opacity-30 uppercase font-bold">Score</div>
-                                            <div className="text-xl font-black text-emerald-500">{stock.score}</div>
+                                        <div className="flex flex-col items-center bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                                            <div className="text-[8px] opacity-30 uppercase font-bold mb-1">Score</div>
+                                            <div className="text-2xl font-black text-emerald-500">{stock.score}</div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     </div>
+                    
+                    <footer className="mt-12 text-center opacity-20 text-[10px] uppercase tracking-[0.5em]">
+                        SmartInvest AI Engine • 2026
+                    </footer>
                 </div>
             );
         }
