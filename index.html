@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartInvest AI - עוזר השקעות חכם</title>
+    <title>SmartInvest AI - ניתוח השקעות בזמן אמת</title>
     
-    <!-- CDNs -->
+    <!-- Scripts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -17,24 +17,24 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0A0A0C;
-            color: #F0F0F0;
+            background-color: #09090B;
+            color: #FAFAFA;
             margin: 0;
             overflow-x: hidden;
         }
         .glass {
-            background: rgba(20, 20, 25, 0.8);
-            backdrop-filter: blur(16px);
+            background: rgba(18, 18, 22, 0.8);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         .emerald-glow {
-            box-shadow: 0 0 40px rgba(16, 185, 129, 0.1);
+            box-shadow: 0 0 50px rgba(16, 185, 129, 0.1);
         }
         input, select {
-            background: rgba(0, 0, 0, 0.4) !important;
+            background: rgba(0, 0, 0, 0.5) !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
             color: white !important;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
         input:focus, select:focus {
             border-color: #10b981 !important;
@@ -46,14 +46,13 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .loading-shimmer {
-            background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
+        .pulse-ai {
+            animation: pulse 2s infinite;
         }
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
     </style>
 </head>
@@ -63,18 +62,18 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // מאגר מניות לדוגמה (ניתן להרחיב)
+        // מאגר נתונים מורחב
         const STOCKS_DB = [
-            { ticker: 'NVDA', name: 'NVIDIA', price: 875, volatility: 9, return: 45, sector: 'טכנולוגיה' },
-            { ticker: 'AAPL', name: 'Apple', price: 172, volatility: 4, return: 15, sector: 'טכנולוגיה' },
-            { ticker: 'TSLA', name: 'Tesla', price: 163, volatility: 10, return: 35, sector: 'רכב' },
-            { ticker: 'MSFT', name: 'Microsoft', price: 415, volatility: 3, return: 18, sector: 'טכנולוגיה' },
-            { ticker: 'AMZN', name: 'Amazon', price: 178, volatility: 6, return: 20, sector: 'קמעונאות' },
-            { ticker: 'GOOGL', name: 'Google', price: 151, volatility: 5, return: 22, sector: 'טכנולוגיה' },
-            { ticker: 'LLY', name: 'Eli Lilly', price: 750, volatility: 5, return: 40, sector: 'בריאות' },
-            { ticker: 'META', name: 'Meta', price: 495, volatility: 7, return: 28, sector: 'טכנולוגיה' },
-            { ticker: 'AMD', name: 'AMD', price: 190, volatility: 8, return: 30, sector: 'טכנולוגיה' },
-            { ticker: 'BRK.B', name: 'Berkshire', price: 408, volatility: 2, return: 12, sector: 'פיננסים' }
+            { ticker: 'NVDA', name: 'NVIDIA', price: 875, volatility: 9, return: 45, sector: 'AI & Chips' },
+            { ticker: 'AAPL', name: 'Apple', price: 172, volatility: 4, return: 15, sector: 'Consumer Tech' },
+            { ticker: 'TSLA', name: 'Tesla', price: 163, volatility: 10, return: 35, sector: 'EV & Energy' },
+            { ticker: 'MSFT', name: 'Microsoft', price: 415, volatility: 3, return: 18, sector: 'Software' },
+            { ticker: 'AMZN', name: 'Amazon', price: 178, volatility: 6, return: 20, sector: 'E-commerce' },
+            { ticker: 'GOOGL', name: 'Google', price: 151, volatility: 5, return: 22, sector: 'Search & AI' },
+            { ticker: 'META', name: 'Meta', price: 495, volatility: 7, return: 28, sector: 'Social Media' },
+            { ticker: 'LLY', name: 'Eli Lilly', price: 750, volatility: 5, return: 40, sector: 'Healthcare' },
+            { ticker: 'AMD', name: 'AMD', price: 190, volatility: 8, return: 30, sector: 'Semiconductors' },
+            { ticker: 'V', name: 'Visa', price: 280, volatility: 3, return: 14, sector: 'Fintech' }
         ];
 
         function App() {
@@ -91,10 +90,10 @@
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
 
-            const analyze = async () => {
+            const runAnalysis = async () => {
                 setLoading(true);
                 
-                // 1. אלגוריתם סינון ודירוג
+                // 1. אלגוריתם סינון לוגי
                 const filtered = STOCKS_DB.filter(s => s.price >= minPrice && s.price <= maxPrice);
                 const scored = filtered.map(s => {
                     const targetRisk = risk === 'Low' ? 3 : risk === 'Medium' ? 6 : 9;
@@ -111,30 +110,32 @@
                 setResults(scored);
                 updateChart(scored);
 
-                // 2. קריאת Gemini AI אמיתית
+                // 2. קריאת API ל-Gemini
                 if (apiKey && scored.length > 0) {
                     try {
                         const horizonText = horizon === 'Short' ? 'עד שנה' : horizon === 'Medium' ? '1-5 שנים' : '5+ שנים';
-                        const prompt = `אתה מומחה השקעות. נתח את 5 המניות הבאות עבור משקיע עם רמת סיכון ${risk} ואופק השקעה של ${horizonText}: ${scored.map(s => s.ticker).join(', ')}. 
-                        כתוב סיכום מקצועי, קצר וקולע בעברית (עד 80 מילים) שמסביר למה הן נבחרו ומה המניה המובילה.`;
+                        const prompt = `אתה אנליסט פיננסי בכיר. נתח את 5 המניות הבאות עבור משקיע עם רמת סיכון ${risk} ואופק השקעה של ${horizonText}: ${scored.map(s => s.ticker).join(', ')}. 
+                        כתוב ניתוח מקצועי, קצר וחד בעברית (עד 100 מילים) שמסביר למה המניה המובילה היא הבחירה הנכונה ביותר כרגע.`;
 
                         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: prompt }] }]
+                            })
                         });
                         
                         const data = await response.json();
                         if (data.candidates && data.candidates[0]) {
                             setAiInsight(data.candidates[0].content.parts[0].text);
                         } else {
-                            throw new Error('Invalid response');
+                            throw new Error('API Error');
                         }
                     } catch (e) {
-                        setAiInsight("שגיאה בחיבור ל-Gemini AI. וודא שמפתח ה-API תקין ופעיל.");
+                        setAiInsight("שגיאה בחיבור ל-AI. וודא שמפתח ה-API תקין (לחץ על אייקון המפתח למעלה).");
                     }
                 } else {
-                    setAiInsight("הזן מפתח API בהגדרות (אייקון המפתח למעלה) כדי לקבל ניתוח AI חי.");
+                    setAiInsight("הזן מפתח API בהגדרות כדי להפעיל את ניתוח ה-AI החי.");
                 }
                 setLoading(false);
             };
@@ -148,31 +149,32 @@
                     data: {
                         datasets: [{
                             data: data.map(s => ({ x: s.volatility, y: s.return, r: s.score / 4 })),
-                            backgroundColor: 'rgba(16, 185, 129, 0.5)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.4)',
                             borderColor: '#10b981',
-                            borderWidth: 2
+                            borderWidth: 2,
+                            hoverBackgroundColor: '#10b981'
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            x: { title: { display: true, text: 'רמת סיכון (1-10)', color: '#666' }, min: 0, max: 11, grid: { color: 'rgba(255,255,255,0.05)' } },
-                            y: { title: { display: true, text: 'תשואה צפויה %', color: '#666' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                            x: { title: { display: true, text: 'רמת סיכון', color: '#666' }, min: 0, max: 11, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { title: { display: true, text: 'תשואה שנתית %', color: '#666' }, grid: { color: 'rgba(255,255,255,0.05)' } }
                         },
                         plugins: { legend: { display: false } }
                     }
                 });
             };
 
-            const saveKey = (key) => {
+            const saveApiKey = (key) => {
                 localStorage.setItem('gemini_api_key', key);
                 setApiKey(key);
                 setShowKeyModal(false);
             };
 
             useEffect(() => {
-                analyze();
+                runAnalysis();
                 if (window.lucide) window.lucide.createIcons();
             }, []);
 
@@ -182,15 +184,15 @@
                     <header className="flex justify-between items-center mb-12">
                         <div className="flex items-center gap-4">
                             <div className="bg-emerald-500 p-3 rounded-2xl emerald-glow">
-                                <i data-lucide="trending-up" className="text-black w-8 h-8"></i>
+                                <i data-lucide="cpu" className="text-black w-8 h-8"></i>
                             </div>
                             <div>
                                 <h1 className="text-2xl font-black tracking-tight">SmartInvest <span className="ai-gradient">AI</span></h1>
-                                <p className="text-[10px] opacity-30 uppercase tracking-widest">Powered by Gemini 1.5</p>
+                                <p className="text-[10px] opacity-30 uppercase tracking-widest font-bold">Advanced Financial Intelligence</p>
                             </div>
                         </div>
                         <button onClick={() => setShowKeyModal(true)} className="glass p-3 rounded-xl hover:bg-white/10 transition-all group">
-                            <i data-lucide="key" className="w-5 h-5 text-emerald-500 group-hover:scale-110 transition-transform"></i>
+                            <i data-lucide="key" className={`w-5 h-5 transition-colors ${apiKey ? 'text-emerald-500' : 'text-red-500'}`}></i>
                         </button>
                     </header>
 
@@ -198,8 +200,11 @@
                     {showKeyModal && (
                         <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
                             <div className="glass p-8 rounded-[2.5rem] max-w-md w-full space-y-6">
-                                <h3 className="text-xl font-bold">הגדרת AI ל-GitHub</h3>
-                                <p className="text-xs opacity-50 leading-relaxed">כדי להפעיל AI אמיתי, עליך להזין מפתח Gemini API. המפתח נשמר מקומית בדפדפן שלך בלבד.</p>
+                                <div className="flex items-center gap-3 text-emerald-500">
+                                    <i data-lucide="shield-check"></i>
+                                    <h3 className="text-xl font-bold">הגדרת API Key</h3>
+                                </div>
+                                <p className="text-xs opacity-50 leading-relaxed">כדי להפעיל AI אמיתי ב-GitHub, עליך להזין מפתח Gemini API. המפתח נשמר בדפדפן שלך בלבד.</p>
                                 <input 
                                     type="password" 
                                     value={apiKey} 
@@ -208,20 +213,22 @@
                                     placeholder="הדבק מפתח Gemini כאן..." 
                                 />
                                 <div className="flex gap-3">
-                                    <button onClick={() => saveKey(apiKey)} className="flex-1 bg-emerald-500 text-black font-bold py-3 rounded-xl hover:bg-emerald-400 transition-all">שמור</button>
+                                    <button onClick={() => saveApiKey(apiKey)} className="flex-1 bg-emerald-500 text-black font-bold py-3 rounded-xl hover:bg-emerald-400 transition-all">שמור מפתח</button>
                                     <button onClick={() => setShowKeyModal(false)} className="flex-1 glass py-3 rounded-xl">ביטול</button>
                                 </div>
-                                <a href="https://aistudio.google.com/app/apikey" target="_blank" className="block text-center text-[10px] text-emerald-500 underline">איך מוציאים מפתח בחינם?</a>
+                                <div className="text-center">
+                                    <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[10px] text-emerald-500 underline">לחץ כאן להוצאת מפתח בחינם</a>
+                                </div>
                             </div>
                         </div>
                     )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                        {/* Sidebar - Controls */}
+                        {/* Sidebar */}
                         <aside className="lg:col-span-4 space-y-6">
                             <div className="glass p-8 rounded-[2.5rem] space-y-8">
                                 <div className="space-y-4">
-                                    <label className="text-[10px] uppercase opacity-40 font-bold tracking-widest block">טווח מחיר ($)</label>
+                                    <label className="text-[10px] uppercase opacity-40 font-bold tracking-widest block">טווח מחיר מניה ($)</label>
                                     <div className="flex gap-3">
                                         <input type="number" value={minPrice} onChange={e => setMinPrice(e.target.value)} className="w-full p-3 rounded-xl text-sm" />
                                         <input type="number" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className="w-full p-3 rounded-xl text-sm" />
@@ -229,7 +236,7 @@
                                 </div>
 
                                 <div className="space-y-4">
-                                    <label className="text-[10px] uppercase opacity-40 font-bold tracking-widest block">רמת סיכון</label>
+                                    <label className="text-[10px] uppercase opacity-40 font-bold tracking-widest block">פרופיל סיכון</label>
                                     <select value={risk} onChange={e => setRisk(e.target.value)} className="w-full p-3 rounded-xl text-sm appearance-none cursor-pointer">
                                         <option value="Low">נמוך (סולידי)</option>
                                         <option value="Medium">בינוני (מאוזן)</option>
@@ -246,32 +253,32 @@
                                     </select>
                                 </div>
 
-                                <button onClick={analyze} disabled={loading} className="w-full bg-emerald-500 text-black font-black py-4 rounded-2xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-2">
+                                <button onClick={runAnalysis} disabled={loading} className="w-full bg-emerald-500 text-black font-black py-4 rounded-2xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-2">
                                     {loading ? <i data-lucide="loader-2" className="animate-spin"></i> : <i data-lucide="sparkles"></i>}
-                                    הפעל ניתוח AI
+                                    נתח עם AI
                                 </button>
                             </div>
                         </aside>
 
-                        {/* Main Content */}
+                        {/* Main */}
                         <div className="lg:col-span-8 space-y-6">
-                            {/* AI Insight Box */}
-                            <div className={`glass p-6 rounded-3xl border-emerald-500/20 relative overflow-hidden ${loading ? 'loading-shimmer' : ''}`}>
+                            {/* AI Insight */}
+                            <div className={`glass p-6 rounded-3xl border-emerald-500/20 relative overflow-hidden ${loading ? 'pulse-ai' : ''}`}>
                                 <div className="flex items-center gap-2 mb-3 text-emerald-500 font-bold text-xs uppercase tracking-widest">
-                                    <i data-lucide="brain" className="w-4 h-4"></i> AI Analysis Summary
+                                    <i data-lucide="bot" className="w-4 h-4"></i> Gemini AI Analysis
                                 </div>
                                 <p className="text-sm leading-relaxed italic opacity-90">
-                                    {loading ? "מנתח נתוני שוק באמצעות Gemini..." : `"${aiInsight}"`}
+                                    {loading ? "מבצע ניתוח מעמיק באמצעות Gemini 1.5 Flash..." : `"${aiInsight}"`}
                                 </p>
                             </div>
 
-                            {/* Chart Area */}
+                            {/* Chart */}
                             <div className="glass p-6 rounded-[2.5rem] h-[320px]">
-                                <h3 className="text-[10px] uppercase opacity-30 font-bold mb-4 tracking-widest">מדד סיכון מול תשואה</h3>
+                                <h3 className="text-[10px] uppercase opacity-30 font-bold mb-4 tracking-widest">מפת סיכון מול תשואה</h3>
                                 <canvas ref={chartRef}></canvas>
                             </div>
 
-                            {/* Results List */}
+                            {/* Results */}
                             <div className="space-y-3">
                                 {results.map(stock => (
                                     <div key={stock.ticker} className="glass p-6 rounded-2xl flex justify-between items-center hover:bg-white/5 transition-all group">
@@ -289,7 +296,7 @@
                                             <div className="text-[10px] text-emerald-500 font-bold">+{stock.return}% תשואה שנתית</div>
                                         </div>
                                         <div className="flex flex-col items-center bg-white/5 px-5 py-2 rounded-xl border border-white/5">
-                                            <div className="text-[8px] opacity-30 uppercase font-bold mb-1">AI Score</div>
+                                            <div className="text-[8px] opacity-30 uppercase font-bold mb-1">Score</div>
                                             <div className="text-2xl font-black text-emerald-500">{stock.score}</div>
                                         </div>
                                     </div>
